@@ -34,10 +34,11 @@ const gmail = google.gmail({
   auth: oauth2Client,
 });
 
-const server = new McpServer({
-  name: "smm-gmail-mcp",
-  version: "1.0.0",
-});
+function createServer() {
+  const server = new McpServer({
+    name: "smm-gmail-mcp",
+    version: "1.0.0",
+  });
 
 server.registerTool(
   "search_gmail",
