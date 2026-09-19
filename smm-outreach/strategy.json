@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "status": "active",
   "last_updated": null,
   "optimization_window_days": 14,
@@ -7,7 +7,11 @@
 
   "hard_rules": {
     "touch1_manual_send": true,
-    "never_send_email_automatically": true,
+    "never_auto_send_touch1": true,
+    "routine_followups_may_auto_send": true,
+    "followups_require_fresh_reply_check": true,
+    "followups_require_fresh_suppression_check": true,
+    "followups_require_current_eligibility": true,
     "never_bypass_suppression": true,
     "never_fabricate_results": true,
     "never_make_guarantees": true,
@@ -57,5 +61,5 @@
   "current_hypotheses": [],
   "winning_patterns": [],
   "losing_patterns": [],
-  "last_change_reason": null
+  "last_change_reason": "Corrected hard-rule conflict so Touch 1 remains manual-send while eligible routine follow-ups may use explicitly authorized automatic sending."
 }
