@@ -1,0 +1,366 @@
+```json
+{
+  "schema_version": "1.0.0",
+  "status": "active",
+  "description": "Canonical measurement definitions for Screaming Mike Media outreach optimization.",
+
+  "measurement_principles": {
+    "count_unique_outbound_attempts": true,
+    "count_unique_prospects_separately": true,
+    "do_not_count_drafts_as_sent": true,
+    "do_not_count_scheduled_messages_as_sent_until_confirmed": true,
+    "prefer_verified_gmail_delivery_state": true,
+    "prefer_verified_reply_content_over_inferred_sentiment": true,
+    "never_infer_positive_intent_from_no_response": true,
+    "never_treat_ooo_as_business_engagement": true,
+    "never_treat_bounce_as_no_reply": true,
+    "never_treat_opt_out_as_generic_negative_reply": true
+  },
+
+  "canonical_outcomes": {
+    "interested": {
+      "score": 10,
+      "category": "positive",
+      "definition": "Prospect expresses credible interest in discussing, evaluating, or potentially purchasing Screaming Mike Media services.",
+      "examples": [
+        "Requests a call or meeting",
+        "Asks for pricing or proposal details",
+        "Asks how the service works with apparent buying intent",
+        "Requests next steps",
+        "States explicit interest in learning more"
+      ],
+      "exclusions": [
+        "Generic thank-you replies",
+        "Automatic responses",
+        "Referral-only replies without expressed interest",
+        "Polite rejection"
+      ]
+    },
+
+    "meeting_request": {
+      "score": 10,
+      "category": "positive",
+      "definition": "Prospect explicitly requests, accepts, or materially advances scheduling of a sales conversation.",
+      "examples": [
+        "Let's talk Tuesday",
+        "Send me some times",
+        "Can we schedule a call?"
+      ]
+    },
+
+    "question_objection": {
+      "score": 6,
+      "category": "engagement",
+      "definition": "Prospect asks a substantive business question or raises an objection that indicates the offer is being actively considered.",
+      "examples": [
+        "What does this cost?",
+        "How is this different from our current agency?",
+        "We tried Google Ads before and it did not work",
+        "How many new patients could this generate?"
+      ],
+      "exclusions": [
+        "Unsubscribe requests",
+        "Who is this?",
+        "Automatic security or verification messages"
+      ]
+    },
+
+    "referral": {
+      "score": 4,
+      "category": "engagement",
+      "definition": "Recipient directs Screaming Mike Media to a more appropriate decision-maker or contact.",
+      "examples": [
+        "You should speak with our office manager",
+        "Please contact Dr. Smith instead",
+        "I forwarded this to our owner"
+      ]
+    },
+
+    "not_now": {
+      "score": 2,
+      "category": "neutral",
+      "definition": "Prospect does not currently want to proceed but leaves open a plausible future opportunity.",
+      "examples": [
+        "Check back next quarter",
+        "Not right now",
+        "We are reviewing this later in the year",
+        "Reach back out after January"
+      ],
+      "exclusions": [
+        "Do not contact me again",
+        "Not interested",
+        "Remove me from your list"
+      ]
+    },
+
+    "other_human_reply": {
+      "score": 1,
+      "category": "neutral",
+      "definition": "A verified human reply that does not fit a stronger positive, negative, referral, objection, or opt-out classification.",
+      "examples": [
+        "Thanks for reaching out",
+        "Received, thank you"
+      ]
+    },
+
+    "no_reply": {
+      "score": 0,
+      "category": "non_response",
+      "definition": "A confirmed delivered outbound message receives no human reply within the applicable measurement window.",
+      "measurement_window_days": 14,
+      "exclusions": [
+        "Messages still inside the response window",
+        "Bounced messages",
+        "Suppressed messages",
+        "Drafts",
+        "Unsent scheduled messages"
+      ]
+    },
+
+    "negative_reply": {
+      "score": -2,
+      "category": "negative",
+      "definition": "Prospect communicates lack of interest without explicitly requesting suppression.",
+      "examples": [
+        "Not interested",
+        "We already have this handled",
+        "No thanks"
+      ],
+      "exclusions": [
+        "Explicit unsubscribe or do-not-contact requests"
+      ]
+    },
+
+    "bounce": {
+      "score": -4,
+      "category": "delivery_failure",
+      "definition": "Email is confirmed undeliverable by Gmail or another authoritative delivery signal.",
+      "subtypes": {
+        "hard_bounce": {
+          "definition": "Permanent delivery failure such as nonexistent mailbox or invalid domain."
+        },
+        "soft_bounce": {
+          "definition": "Temporary delivery failure such as mailbox full or transient server failure."
+        }
+      }
+    },
+
+    "opt_out": {
+      "score": -8,
+      "category": "suppression",
+      "definition": "Recipient explicitly requests no further outreach, removal, unsubscribe, or equivalent suppression.",
+      "examples": [
+        "Unsubscribe",
+        "Remove me",
+        "Do not contact me again",
+        "Take me off your list"
+      ],
+      "required_action": "suppress_immediately"
+    },
+
+    "complaint": {
+      "score": -10,
+      "category": "suppression",
+      "definition": "Recipient alleges spam, deception, harassment, or otherwise makes a substantive complaint about the outreach.",
+      "required_action": "suppress_and_escalate"
+    },
+
+    "ooo": {
+      "score": 0,
+      "category": "system_response",
+      "definition": "Automated out-of-office or temporary absence response.",
+      "count_as_human_reply": false,
+      "count_as_engagement": false
+    },
+
+    "auto_reply": {
+      "score": 0,
+      "category": "system_response",
+      "definition": "Automated response that is not a meaningful human business reply.",
+      "count_as_human_reply": false,
+      "count_as_engagement": false
+    }
+  },
+
+  "attribution_rules": {
+    "reply_attribution_window_days": 30,
+    "primary_attribution_method": "most_recent_relevant_outbound_touch",
+    "preserve_full_sequence_context": true,
+    "do_not_assume_last_touch_caused_reply": true,
+    "mark_uncertain_attribution": true,
+    "attribution_confidence_values": [
+      "low",
+      "medium",
+      "high"
+    ]
+  },
+
+  "prospect_level_rules": {
+    "one_prospect_may_have_multiple_outbound_attempts": true,
+    "prospect_positive_outcome_counts_once_per_conversion_event": true,
+    "meeting_request_supersedes_interested_for_event_classification": true,
+    "opt_out_supersedes_other_reply_types": true,
+    "complaint_supersedes_all_other_reply_types": true,
+    "bounce_applies_to_email_address_not_necessarily_entire_business": true,
+    "hard_bounce_requires_contact_reverification_before_retry": true
+  },
+
+  "touch_level_rules": {
+    "touch1": {
+      "must_be_manually_sent": true,
+      "draft_creation_does_not_count_as_attempt": true,
+      "approved_draft_does_not_count_as_attempt": true,
+      "confirmed_send_counts_as_attempt": true
+    },
+    "followup": {
+      "confirmed_send_counts_as_attempt": true,
+      "scheduled_but_not_sent_does_not_count_as_attempt": true,
+      "suppressed_followup_does_not_count_as_attempt": true
+    }
+  },
+
+  "core_metrics": {
+    "qualified_interest_rate": {
+      "numerator": [
+        "interested",
+        "meeting_request"
+      ],
+      "denominator": "confirmed_delivered_outbound_attempts",
+      "priority": "primary"
+    },
+
+    "meeting_request_rate": {
+      "numerator": [
+        "meeting_request"
+      ],
+      "denominator": "confirmed_delivered_outbound_attempts",
+      "priority": "primary"
+    },
+
+    "meaningful_engagement_rate": {
+      "numerator": [
+        "interested",
+        "meeting_request",
+        "question_objection",
+        "referral"
+      ],
+      "denominator": "confirmed_delivered_outbound_attempts",
+      "priority": "primary"
+    },
+
+    "human_reply_rate": {
+      "numerator": [
+        "interested",
+        "meeting_request",
+        "question_objection",
+        "referral",
+        "not_now",
+        "other_human_reply",
+        "negative_reply",
+        "opt_out",
+        "complaint"
+      ],
+      "denominator": "confirmed_delivered_outbound_attempts",
+      "priority": "secondary"
+    },
+
+    "negative_response_rate": {
+      "numerator": [
+        "negative_reply"
+      ],
+      "denominator": "confirmed_delivered_outbound_attempts",
+      "priority": "guardrail"
+    },
+
+    "opt_out_rate": {
+      "numerator": [
+        "opt_out",
+        "complaint"
+      ],
+      "denominator": "confirmed_delivered_outbound_attempts",
+      "priority": "guardrail"
+    },
+
+    "bounce_rate": {
+      "numerator": [
+        "bounce"
+      ],
+      "denominator": "confirmed_send_attempts",
+      "priority": "guardrail"
+    },
+
+    "no_reply_rate": {
+      "numerator": [
+        "no_reply"
+      ],
+      "denominator": "eligible_matured_delivered_attempts",
+      "priority": "secondary"
+    }
+  },
+
+  "denominator_definitions": {
+    "confirmed_send_attempts": "Outbound messages verified as sent by the authoritative sending system.",
+    "confirmed_delivered_outbound_attempts": "Confirmed sent messages excluding confirmed bounces.",
+    "eligible_matured_delivered_attempts": "Confirmed delivered messages old enough to have completed the configured response measurement window."
+  },
+
+  "draft_quality_metrics": {
+    "draft_approval_rate": {
+      "definition": "Percentage of optimizer-generated drafts Mike approves without substantive revision."
+    },
+
+    "draft_revision_rate": {
+      "definition": "Percentage of drafts requiring substantive changes before approval."
+    },
+
+    "draft_rejection_rate": {
+      "definition": "Percentage of drafts Mike rejects rather than approves or revises."
+    },
+
+    "repeat_revision_pattern": {
+      "definition": "The same type of correction appears repeatedly across multiple drafts.",
+      "optimizer_use": "May justify a low-risk quality adjustment before broader performance sample thresholds are met."
+    }
+  },
+
+  "data_quality": {
+    "required_fields_when_available": [
+      "prospect_id",
+      "business_name",
+      "email_address",
+      "touch_number",
+      "sent_at",
+      "subject_pattern",
+      "opening_pattern",
+      "cta_pattern",
+      "strategy_version"
+    ],
+
+    "reply_fields_when_available": [
+      "reply_at",
+      "outcome_classification",
+      "classification_confidence",
+      "attribution_confidence"
+    ],
+
+    "invalid_for_optimization_if": [
+      "send state cannot be verified",
+      "reply classification is materially ambiguous",
+      "duplicate records cannot be reconciled",
+      "strategy version is unknown for a material share of the sample"
+    ]
+  },
+
+  "optimization_guardrails": {
+    "never_optimize_for_reply_rate_alone": true,
+    "primary_goal": "qualified_positive_business_conversations",
+    "require_guardrail_review_before_declaring_winner": true,
+    "require_sample_size_before_broad_strategy_change": true,
+    "default_minimum_sample_size": 20,
+    "do_not_merge_bounce_and_no_reply": true,
+    "do_not_merge_opt_out_and_negative_reply": true,
+    "do_not_count_ooo_as_reply": true,
+    "do_not_count_auto_reply_as_reply": true
+  }
+}
+```
