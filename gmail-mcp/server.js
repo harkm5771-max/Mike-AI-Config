@@ -39,17 +39,137 @@ const gmail = google.gmail({
   auth: oauth2Client,
 });
 
+function decodeBase64Url(data = "") {
+  if (!data) return "";
+
+  const normalized = data
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+
+  return Buffer.from(normalized, "base64").toString("utf8");
+}
+
+function stripHtml(html = "") {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n")
+    .replace(/<\/div>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n\s*\n\s*\n+/g, "\n\n")
+    .trim();
+}
+
+function getHeader(headers = [], name) {
+  return (
+    headers.find(
+      (header) =>
+        header.name?.toLowerCase() === name.toLowerCase()
+    )?.value ?? ""
+  );
+}
+
+function extractPlainText(payload) {
+  if (!payload) return "";
+
+  if (payload.mimeType === "text/plain" && payload.body?.data) {
+    return decodeBase64Url(payload.body.data);
+  }
+
+  if (payload.parts?.length) {
+    for (const part of payload.parts) {
+      const text = extractPlainText(part);
+      if (text) return text;
+    }
+  }
+
+  return "";
+}
+
+function extractHtmlText(payload) {
+  if (!payload) return "";
+
+  if (payload.mimeType === "text/html" && payload.body?.data) {
+    return stripHtml(decodeBase64Url(payload.body.data));
+  }
+
+  if (payload.parts?.length) {
+    for (const part of payload.parts) {
+      const text = extractHtmlText(part);
+      if (text) return text;
+    }
+  }
+
+  return "";
+}
+
+function extractBody(payload) {
+  const plainText = extractPlainText(payload);
+  if (plainText) return plainText;
+
+  const htmlText = extractHtmlText(payload);
+  if (htmlText) return htmlText;
+
+  if (payload?.body?.data) {
+    return decodeBase64Url(payload.body.data);
+  }
+
+  return "";
+}
+
+function cleanBody(text = "") {
+  return text
+    .replace(/\r/g, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{4,}/g, "\n\n\n")
+    .trim();
+}
+
+function compactMessage(message) {
+  const headers = message.payload?.headers ?? [];
+  const body = cleanBody(extractBody(message.payload));
+
+  const maxBodyChars = 5000;
+
+  return {
+    messageId: message.id ?? "",
+    threadId: message.threadId ?? "",
+    from: getHeader(headers, "From"),
+    to: getHeader(headers, "To"),
+    cc: getHeader(headers, "Cc"),
+    date: getHeader(headers, "Date"),
+    subject: getHeader(headers, "Subject"),
+    messageIdHeader: getHeader(headers, "Message-ID"),
+    inReplyTo: getHeader(headers, "In-Reply-To"),
+    references: getHeader(headers, "References"),
+    snippet: message.snippet ?? "",
+    body:
+      body.length > maxBodyChars
+        ? `${body.slice(0, maxBodyChars)}\n\n[Message body truncated]`
+        : body,
+  };
+}
+
 function createServer() {
   const server = new McpServer({
     name: "smm-gmail-mcp",
-    version: "1.0.0",
+    version: "1.1.0",
   });
 
   server.registerTool(
     "search_gmail",
     {
       title: "Search Gmail",
-      description: "Search Gmail messages using standard Gmail search syntax.",
+      description:
+        "Search Gmail messages using standard Gmail search syntax.",
       inputSchema: {
         query: z.string().describe("Gmail search query"),
         maxResults: z.number().int().min(1).max(50).default(20),
@@ -68,7 +188,8 @@ function createServer() {
             type: "text",
             text: JSON.stringify(
               {
-                resultSizeEstimate: result.data.resultSizeEstimate ?? 0,
+                resultSizeEstimate:
+                  result.data.resultSizeEstimate ?? 0,
                 messages: result.data.messages ?? [],
               },
               null,
@@ -84,7 +205,8 @@ function createServer() {
     "get_gmail_message",
     {
       title: "Read Gmail Message",
-      description: "Read a Gmail message by message ID.",
+      description:
+        "Read a Gmail message in a compact decoded format suitable for analysis.",
       inputSchema: {
         messageId: z.string(),
       },
@@ -96,11 +218,13 @@ function createServer() {
         format: "full",
       });
 
+      const message = compactMessage(result.data);
+
       return {
         content: [
           {
             type: "text",
-            text: JSON.stringify(result.data, null, 2),
+            text: JSON.stringify(message, null, 2),
           },
         ],
       };
@@ -111,7 +235,8 @@ function createServer() {
     "get_gmail_thread",
     {
       title: "Read Gmail Thread",
-      description: "Read an entire Gmail thread by thread ID.",
+      description:
+        "Read an entire Gmail thread in a compact decoded format suitable for summarization.",
       inputSchema: {
         threadId: z.string(),
       },
@@ -123,11 +248,31 @@ function createServer() {
         format: "full",
       });
 
+      const messages = (result.data.messages ?? []).map(
+        compactMessage
+      );
+
+      const thread = {
+        threadId: result.data.id ?? threadId,
+        messageCount: messages.length,
+        messages,
+      };
+
+      let text = JSON.stringify(thread, null, 2);
+
+      const maxThreadChars = 35000;
+
+      if (text.length > maxThreadChars) {
+        text =
+          text.slice(0, maxThreadChars) +
+          '\n\n{"notice":"Thread output truncated to protect model context."}';
+      }
+
       return {
         content: [
           {
             type: "text",
-            text: JSON.stringify(result.data, null, 2),
+            text,
           },
         ],
       };
@@ -138,7 +283,8 @@ function createServer() {
     "create_gmail_draft",
     {
       title: "Create Gmail Draft",
-      description: "Create a Gmail draft. This tool cannot send email.",
+      description:
+        "Create a Gmail draft. This tool cannot send email.",
       inputSchema: {
         to: z.string(),
         subject: z.string(),
@@ -216,7 +362,11 @@ function createServer() {
 }
 
 app.get("/health", (_req, res) => {
-  res.json({ ok: true });
+  res.json({
+    ok: true,
+    service: "smm-gmail-mcp",
+    version: "1.1.0",
+  });
 });
 
 app.use("/mcp", (req, res, next) => {
@@ -240,7 +390,11 @@ app.all("/mcp", async (req, res) => {
 
   try {
     await server.connect(transport);
-    await transport.handleRequest(req, res, req.body);
+    await transport.handleRequest(
+      req,
+      res,
+      req.body
+    );
   } catch (error) {
     console.error("MCP request failed:", error);
 
@@ -261,5 +415,7 @@ app.all("/mcp", async (req, res) => {
 });
 
 app.listen(Number(PORT), "0.0.0.0", () => {
-  console.log(`SMM Gmail MCP listening on port ${PORT}`);
+  console.log(
+    `SMM Gmail MCP v1.1.0 listening on port ${PORT}`
+  );
 });
