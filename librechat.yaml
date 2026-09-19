@@ -41,3 +41,5 @@ memory:
   rerankerType: none
   tavilyApiKey: "${TAVILY_API_KEY}"
   safeSearch: 1
+  interface:
+  webSearch: true
