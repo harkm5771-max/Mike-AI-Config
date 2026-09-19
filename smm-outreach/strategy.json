@@ -1,0 +1,61 @@
+{
+  "version": "1.0.0",
+  "status": "active",
+  "last_updated": null,
+  "optimization_window_days": 14,
+  "minimum_sample_size": 20,
+
+  "hard_rules": {
+    "touch1_manual_send": true,
+    "never_send_email_automatically": true,
+    "never_bypass_suppression": true,
+    "never_fabricate_results": true,
+    "never_make_guarantees": true,
+    "never_change_pricing_without_mike": true,
+    "never_contact_suppressed_businesses": true
+  },
+
+  "touch1": {
+    "subject_style": "specific-observation",
+    "opening_style": "research-first",
+    "personalization_depth": "1-2 verified facts",
+    "length_words_min": 80,
+    "length_words_max": 130,
+    "cta_style": "low-friction invitation",
+    "tone": "direct-natural-low-pressure"
+  },
+
+  "followup": {
+    "tone": "brief-contextual",
+    "avoid_repeating_original_pitch": true,
+    "add_new_information_each_touch": true,
+    "cta_style": "low-friction"
+  },
+
+  "scoring": {
+    "interested": 10,
+    "question_objection": 6,
+    "not_now": 2,
+    "other_human_reply": 1,
+    "no_reply": 0,
+    "bounce": -4,
+    "opt_out": -8
+  },
+
+  "optimizer_permissions": {
+    "may_change_subject_patterns": true,
+    "may_change_opening_patterns": true,
+    "may_change_cta_style": true,
+    "may_change_personalization_depth": true,
+    "may_change_followup_structure": true,
+    "may_change_followup_spacing": true,
+    "may_change_hard_rules": false,
+    "may_change_pricing": false,
+    "may_enable_sending": false
+  },
+
+  "current_hypotheses": [],
+  "winning_patterns": [],
+  "losing_patterns": [],
+  "last_change_reason": null
+}
