@@ -1,3 +1,45 @@
 {
-  "changes": []
+  "changes": [
+    {
+      "timestamp": "2026-09-19T17:36:18.024Z",
+      "strategy_version_before": "1.0.0",
+      "strategy_version_after": "1.0.0",
+      "outcome": "unchanged",
+      "evidence_window": {
+        "start": "2026-09-05T17:36:18.024Z",
+        "end": "2026-09-19T17:36:18.024Z",
+        "days": 14
+      },
+      "sample_size": 12,
+      "evidence_summary": {
+        "verified_outbound_attempts": 12,
+        "confirmed_bounces": 6,
+        "confirmed_delivered_attempts": 6,
+        "meeting_requests": 1,
+        "question_objections": 2,
+        "not_now": 1,
+        "opt_outs": 1,
+        "delivered_attempts_without_matured_or_classified_outcome": 1,
+        "strategy_attributed_attempts": 0,
+        "quality_control_pattern_available": false
+      },
+      "field_changed": null,
+      "previous_value": null,
+      "new_value": null,
+      "hypothesis": null,
+      "success_metric": null,
+      "rollback_condition": null,
+      "reasoning_summary": "The sample is below the configured minimum of 20 relevant outbound attempts. More importantly, every attempt in the window lacks strategy-version and messaging-pattern attribution, so the observed outcomes cannot be reliably connected to strategy 1.0.0 or to a specific permitted strategy variable. The high bounce count is a contact-data or delivery-quality concern, not evidence supporting a messaging change under current optimizer permissions. No repeated draft rejection or revision pattern was available to support a low-risk quality correction.",
+      "confidence": "high",
+      "active_experiment_status": "none; no experiment started",
+      "unresolved_data_quality_issues": [
+        "Missing strategy version and messaging-pattern attribution for all evaluation-window attempts.",
+        "Missing touch numbers across the ledger.",
+        "Three unresolved identity or original-message context records remain in the ledger.",
+        "The Midwest Chiropractic and Wellness Center last_outbound_at timestamp is not represented by a corresponding touch record.",
+        "The hello@servicescale.pro bounce lacks an attributable send timestamp and was excluded from the sample."
+      ],
+      "next_evaluation_condition": "Re-evaluate after at least 20 relevant outbound attempts with materially complete strategy-version and messaging-pattern attribution, or earlier if repeated draft-quality correction evidence or a safety rollback condition emerges."
+    }
+  ]
 }
