@@ -1,0 +1,12 @@
+{
+"schema_version": "1.0.0",
+"last_updated": null,
+"prospects": {},
+"daily_rollups": {},
+"data_quality": {
+"last_reconciled_at": null,
+"unresolved_records": [],
+"duplicate_candidates": [],
+"missing_strategy_versions": []
+}
+}
