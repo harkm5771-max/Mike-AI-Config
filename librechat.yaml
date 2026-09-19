@@ -5,14 +5,33 @@ memory:
   disabled: false
   personalize: true
   tokenLimit: 3000
+  charLimit: 10000
   maxInputTokens: 12000
   messageWindowSize: 8
+
   validKeys:
     - user_preferences
     - personal_context
     - ongoing_projects
     - learned_facts
+
   agent:
     enabled: true
     provider: openAI
     model: gpt-5.6-luna
+    instructions: |
+      Maintain durable memory about the user using only the allowed keys.
+
+      Use user_preferences for explicitly stated preferences about communication style,
+      formatting, workflow, tools, or how the user wants responses handled.
+
+      Use personal_context for stable background facts the user explicitly shares that
+      are likely to matter in future conversations.
+
+      Use ongoing_projects for active businesses, projects, goals, or recurring work
+      the user is currently pursuing.
+
+      Use learned_facts for other durable factual information explicitly stated by the user.
+
+      Do not store trivial one-off details, temporary requests, or information that is
+      unlikely to matter in future conversations.
