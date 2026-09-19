@@ -3,12 +3,20 @@
   "last_completed_experiment": null,
   "experiment_history": [],
   "evaluation_state": {
-    "last_run_at": null,
-    "last_evidence_window_start": null,
-    "last_evidence_window_end": null,
-    "last_sample_size": 0,
-    "last_decision": null,
-    "last_decision_reason": null
+    "last_run_at": "2026-09-19T17:36:18.024Z",
+    "last_evidence_window_start": "2026-09-05T17:36:18.024Z",
+    "last_evidence_window_end": "2026-09-19T17:36:18.024Z",
+    "last_sample_size": 12,
+    "last_decision": "unchanged",
+    "last_decision_reason": "No strategy change was justified. The 14-day window contains 12 verified outbound attempts, below the 20-attempt threshold. All 12 attempts lack strategy-version and messaging-pattern attribution, preventing a reliable connection between outcomes and the active strategy. No repeated draft-quality correction evidence was available to justify a low-risk exception.",
+    "last_confidence": "high",
+    "unresolved_data_quality_issues": [
+      "Strategy version is missing for all 12 outbound attempts in the evaluation window and for every prospect listed in outcome-ledger.json.",
+      "Touch number, subject pattern, opening pattern, CTA pattern, and personalization depth are missing across the relevant attempts.",
+      "Three ledger records retain unresolved identity or original-message context issues: hello@servicescale.pro, parrish2@ptd.net, and info@thespinestudiochiro.com.",
+      "info@midwestchiroandwellness.com lists last_outbound_at as 2026-09-14T20:12:11Z, but its latest recorded touch is dated 2026-09-06T01:16:42Z.",
+      "hello@servicescale.pro has a verified bounce event but no attributable outbound send timestamp, so it was excluded from the sample."
+    ]
   },
   "guardrails": {
     "pause_new_experiments_if_data_quality_is_poor": true,
