@@ -48,6 +48,7 @@ mcpServers:
     url: "https://gmail-mcp-production-fc64.up.railway.app/mcp"
     headers:
       Authorization: "Bearer ${MCP_API_TOKEN}"
+    requiresOAuth: false
     timeout: 60000
     initTimeout: 60000
     startup: true
