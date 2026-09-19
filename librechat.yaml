@@ -36,10 +36,8 @@ memory:
       Do not store trivial one-off details, temporary requests, or information that is
       unlikely to matter in future conversations.
       webSearch:
+webSearch:
   searchProvider: tavily
   scraperProvider: tavily
   rerankerType: none
   tavilyApiKey: "${TAVILY_API_KEY}"
-  safeSearch: 1
-  interface:
-  webSearch: true
