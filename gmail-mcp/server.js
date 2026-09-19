@@ -39,6 +39,9 @@ const gmail = google.gmail({
   auth: oauth2Client,
 });
 
+const LABEL_PROCESSED = "SMM/Processed";
+const LABEL_SUPPRESSED = "SMM/Suppressed";
+
 function decodeBase64Url(data = "") {
   if (!data) return "";
 
@@ -151,6 +154,7 @@ function compactMessage(message) {
     inReplyTo: getHeader(headers, "In-Reply-To"),
     references: getHeader(headers, "References"),
     snippet: message.snippet ?? "",
+    labels: message.labelIds ?? [],
     body:
       body.length > maxBodyChars
         ? `${body.slice(0, maxBodyChars)}\n\n[Message body truncated]`
@@ -158,10 +162,57 @@ function compactMessage(message) {
   };
 }
 
+async function ensureLabel(labelName) {
+  const existing = await gmail.users.labels.list({
+    userId: "me",
+  });
+
+  const found = (existing.data.labels ?? []).find(
+    (label) => label.name === labelName
+  );
+
+  if (found?.id) {
+    return found.id;
+  }
+
+  const created = await gmail.users.labels.create({
+    userId: "me",
+    requestBody: {
+      name: labelName,
+      labelListVisibility: "labelShow",
+      messageListVisibility: "show",
+    },
+  });
+
+  if (!created.data.id) {
+    throw new Error(`Failed to create Gmail label: ${labelName}`);
+  }
+
+  return created.data.id;
+}
+
+async function applyLabelToMessage(messageId, labelName) {
+  const labelId = await ensureLabel(labelName);
+
+  await gmail.users.messages.modify({
+    userId: "me",
+    id: messageId,
+    requestBody: {
+      addLabelIds: [labelId],
+    },
+  });
+
+  return {
+    messageId,
+    labelName,
+    labelId,
+  };
+}
+
 function createServer() {
   const server = new McpServer({
     name: "smm-gmail-mcp",
-    version: "1.1.0",
+    version: "1.2.0",
   });
 
   server.registerTool(
@@ -218,13 +269,15 @@ function createServer() {
         format: "full",
       });
 
-      const message = compactMessage(result.data);
-
       return {
         content: [
           {
             type: "text",
-            text: JSON.stringify(message, null, 2),
+            text: JSON.stringify(
+              compactMessage(result.data),
+              null,
+              2
+            ),
           },
         ],
       };
@@ -358,6 +411,81 @@ function createServer() {
     }
   );
 
+  server.registerTool(
+    "mark_gmail_processed",
+    {
+      title: "Mark Gmail Message Processed",
+      description:
+        "Apply the SMM/Processed label to a Gmail message after it has been reviewed and classified.",
+      inputSchema: {
+        messageId: z.string(),
+      },
+    },
+    async ({ messageId }) => {
+      const result = await applyLabelToMessage(
+        messageId,
+        LABEL_PROCESSED
+      );
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              {
+                ...result,
+                status: "processed",
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
+  );
+
+  server.registerTool(
+    "mark_gmail_suppressed",
+    {
+      title: "Mark Gmail Message Suppressed",
+      description:
+        "Apply SMM/Suppressed and SMM/Processed labels to a Gmail message representing an opt-out, bounce, or other suppression event.",
+      inputSchema: {
+        messageId: z.string(),
+      },
+    },
+    async ({ messageId }) => {
+      const suppressed = await applyLabelToMessage(
+        messageId,
+        LABEL_SUPPRESSED
+      );
+
+      const processed = await applyLabelToMessage(
+        messageId,
+        LABEL_PROCESSED
+      );
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              {
+                messageId,
+                suppressedLabel: suppressed.labelName,
+                processedLabel: processed.labelName,
+                status: "suppressed_and_processed",
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
+  );
+
   return server;
 }
 
@@ -365,7 +493,7 @@ app.get("/health", (_req, res) => {
   res.json({
     ok: true,
     service: "smm-gmail-mcp",
-    version: "1.1.0",
+    version: "1.2.0",
   });
 });
 
@@ -416,6 +544,6 @@ app.all("/mcp", async (req, res) => {
 
 app.listen(Number(PORT), "0.0.0.0", () => {
   console.log(
-    `SMM Gmail MCP v1.1.0 listening on port ${PORT}`
+    `SMM Gmail MCP v1.2.0 listening on port ${PORT}`
   );
 });
