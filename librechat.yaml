@@ -18,7 +18,7 @@ memory:
   agent:
     enabled: true
     provider: openAI
-    model: gpt-5.6-luna
+    model: gpt-4.1-mini
     instructions: |
       Maintain durable memory about the user using only the allowed keys.
 
