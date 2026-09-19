@@ -34,4 +34,8 @@ memory:
       Use learned_facts for other durable factual information explicitly stated by the user.
 
       Do not store trivial one-off details, temporary requests, or information that is
+<<<<<<< HEAD
       unlikely to matter in future conversations.
+=======
+      unlikely to matter in future conversations.
+>>>>>>> f2a4610 (Update memory configuration for librechat.yaml)
