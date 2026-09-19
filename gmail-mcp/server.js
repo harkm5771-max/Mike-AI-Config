@@ -80,6 +80,17 @@ function getHeader(headers = [], name) {
   );
 }
 
+function normalizeEmail(value = "") {
+  const angle = value.match(/<([^>]+)>/);
+  const candidate = angle?.[1] ?? value;
+
+  const match = candidate.match(
+    /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i
+  );
+
+  return (match?.[0] ?? "").toLowerCase();
+}
+
 function extractPlainText(payload) {
   if (!payload) return "";
 
@@ -209,10 +220,113 @@ async function applyLabelToMessage(messageId, labelName) {
   };
 }
 
+function encodeHtmlMessage({
+  to,
+  subject,
+  body,
+  inReplyTo,
+  references,
+}) {
+  const headers = [
+    `To: ${to}`,
+    `Subject: ${subject}`,
+    "MIME-Version: 1.0",
+    'Content-Type: text/html; charset="UTF-8"',
+  ];
+
+  if (inReplyTo) {
+    headers.push(`In-Reply-To: ${inReplyTo}`);
+  }
+
+  if (references) {
+    headers.push(`References: ${references}`);
+  }
+
+  const mimeMessage =
+    headers.join("\r\n") +
+    "\r\n\r\n" +
+    body;
+
+  return Buffer.from(mimeMessage)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+async function assertRoutineFollowupMaySend({
+  to,
+  threadId,
+}) {
+  const targetEmail = normalizeEmail(to);
+
+  if (!targetEmail) {
+    throw new Error("Could not normalize recipient email.");
+  }
+
+  const suppressedLabelId = await ensureLabel(LABEL_SUPPRESSED);
+
+  const suppressedMatches = await gmail.users.messages.list({
+    userId: "me",
+    labelIds: [suppressedLabelId],
+    q: targetEmail,
+    maxResults: 5,
+  });
+
+  if ((suppressedMatches.data.messages ?? []).length > 0) {
+    throw new Error(
+      "SEND_BLOCKED_SUPPRESSED: recipient has an SMM/Suppressed Gmail record."
+    );
+  }
+
+  const profile = await gmail.users.getProfile({
+    userId: "me",
+  });
+
+  const ownEmail = (profile.data.emailAddress ?? "").toLowerCase();
+
+  const thread = await gmail.users.threads.get({
+    userId: "me",
+    id: threadId,
+    format: "full",
+  });
+
+  const messages = thread.data.messages ?? [];
+
+  if (messages.length === 0) {
+    throw new Error(
+      "SEND_BLOCKED_THREAD_EMPTY: follow-up requires an existing outbound thread."
+    );
+  }
+
+  for (const message of messages) {
+    const headers = message.payload?.headers ?? [];
+    const from = normalizeEmail(getHeader(headers, "From"));
+
+    if (from && ownEmail && from !== ownEmail) {
+      throw new Error(
+        "SEND_BLOCKED_INBOUND_EXISTS: thread contains an inbound message. Reply watcher or human handling is required before any further routine follow-up."
+      );
+    }
+
+    if ((message.labelIds ?? []).includes(suppressedLabelId)) {
+      throw new Error(
+        "SEND_BLOCKED_SUPPRESSED: thread contains a suppressed message."
+      );
+    }
+  }
+
+  return {
+    targetEmail,
+    ownEmail,
+    threadMessageCount: messages.length,
+  };
+}
+
 function createServer() {
   const server = new McpServer({
     name: "smm-gmail-mcp",
-    version: "1.2.0",
+    version: "1.3.0",
   });
 
   server.registerTool(
@@ -337,7 +451,7 @@ function createServer() {
     {
       title: "Create Gmail Draft",
       description:
-        "Create a Gmail draft. This tool cannot send email.",
+        "Create a Gmail draft. This tool cannot send email and is appropriate for Touch 1 manual-review drafts.",
       inputSchema: {
         to: z.string(),
         subject: z.string(),
@@ -355,31 +469,13 @@ function createServer() {
       inReplyTo,
       references,
     }) => {
-      const headers = [
-        `To: ${to}`,
-        `Subject: ${subject}`,
-        "MIME-Version: 1.0",
-        'Content-Type: text/html; charset="UTF-8"',
-      ];
-
-      if (inReplyTo) {
-        headers.push(`In-Reply-To: ${inReplyTo}`);
-      }
-
-      if (references) {
-        headers.push(`References: ${references}`);
-      }
-
-      const mimeMessage =
-        headers.join("\r\n") +
-        "\r\n\r\n" +
-        body;
-
-      const raw = Buffer.from(mimeMessage)
-        .toString("base64")
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_")
-        .replace(/=+$/, "");
+      const raw = encodeHtmlMessage({
+        to,
+        subject,
+        body,
+        inReplyTo,
+        references,
+      });
 
       const result = await gmail.users.drafts.create({
         userId: "me",
@@ -401,6 +497,96 @@ function createServer() {
                 messageId: result.data.message?.id,
                 threadId: result.data.message?.threadId,
                 status: "draft_created_not_sent",
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
+  );
+
+  server.registerTool(
+    "send_gmail_followup",
+    {
+      title: "Send Eligible Gmail Follow-Up",
+      description:
+        "Send a routine SMM follow-up only. Touch 1 is prohibited. Requires touch number 2+, an existing Gmail thread, and explicit fresh eligibility, reply, and suppression confirmations. The tool also blocks sending if the thread contains any inbound message or any SMM/Suppressed evidence.",
+      inputSchema: {
+        to: z.string(),
+        subject: z.string(),
+        body: z.string(),
+        threadId: z.string(),
+        touchNumber: z.number().int().min(2),
+        eligibilityConfirmed: z.literal(true),
+        replyCheckConfirmed: z.literal(true),
+        suppressionCheckConfirmed: z.literal(true),
+        inReplyTo: z.string().optional(),
+        references: z.string().optional(),
+      },
+    },
+    async ({
+      to,
+      subject,
+      body,
+      threadId,
+      touchNumber,
+      eligibilityConfirmed,
+      replyCheckConfirmed,
+      suppressionCheckConfirmed,
+      inReplyTo,
+      references,
+    }) => {
+      if (
+        eligibilityConfirmed !== true ||
+        replyCheckConfirmed !== true ||
+        suppressionCheckConfirmed !== true
+      ) {
+        throw new Error(
+          "SEND_BLOCKED_CONFIRMATIONS_REQUIRED"
+        );
+      }
+
+      const safety = await assertRoutineFollowupMaySend({
+        to,
+        threadId,
+      });
+
+      const raw = encodeHtmlMessage({
+        to,
+        subject,
+        body,
+        inReplyTo,
+        references,
+      });
+
+      const result = await gmail.users.messages.send({
+        userId: "me",
+        requestBody: {
+          raw,
+          threadId,
+        },
+      });
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              {
+                status: "followup_sent",
+                touchNumber,
+                messageId: result.data.id,
+                threadId: result.data.threadId ?? threadId,
+                recipient: safety.targetEmail,
+                safetyChecks: {
+                  explicitEligibilityConfirmed: true,
+                  explicitReplyCheckConfirmed: true,
+                  explicitSuppressionCheckConfirmed: true,
+                  noInboundThreadMessageFound: true,
+                  noSuppressionEvidenceFound: true,
+                },
               },
               null,
               2
@@ -493,7 +679,7 @@ app.get("/health", (_req, res) => {
   res.json({
     ok: true,
     service: "smm-gmail-mcp",
-    version: "1.2.0",
+    version: "1.3.0",
   });
 });
 
@@ -518,6 +704,7 @@ app.all("/mcp", async (req, res) => {
 
   try {
     await server.connect(transport);
+
     await transport.handleRequest(
       req,
       res,
@@ -544,6 +731,6 @@ app.all("/mcp", async (req, res) => {
 
 app.listen(Number(PORT), "0.0.0.0", () => {
   console.log(
-    `SMM Gmail MCP v1.2.0 listening on port ${PORT}`
+    `SMM Gmail MCP v1.3.0 listening on port ${PORT}`
   );
 });
