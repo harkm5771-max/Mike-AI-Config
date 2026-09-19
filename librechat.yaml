@@ -42,6 +42,10 @@ webSearch:
   rerankerType: none
   tavilyApiKey: "${TAVILY_API_KEY}"
 
+mcpSettings:
+  allowedAddresses:
+    - "gmail-mcp.railway.internal:3000"
+
 mcpServers:
    gmail:
     type: streamable-http
