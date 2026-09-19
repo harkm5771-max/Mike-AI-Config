@@ -42,14 +42,12 @@ webSearch:
   rerankerType: none
   tavilyApiKey: "${TAVILY_API_KEY}"
 
-mcpSettings:
-  allowedAddresses:
-    - "gmail-mcp.railway.internal:3000"
-
 mcpServers:
-   gmail:
+  gmail:
     type: streamable-http
-    url: "http://gmail-mcp.railway.internal:3000/mcp"
+    url: "https://gmail-mcp-production-fc64.up.railway.app/mcp"
+    headers:
+      Authorization: "Bearer ${MCP_API_TOKEN}"
     timeout: 60000
     initTimeout: 60000
     startup: true
