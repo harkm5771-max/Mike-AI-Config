@@ -1,0 +1,19 @@
+{
+  "active_experiment": null,
+  "last_completed_experiment": null,
+  "experiment_history": [],
+  "evaluation_state": {
+    "last_run_at": null,
+    "last_evidence_window_start": null,
+    "last_evidence_window_end": null,
+    "last_sample_size": 0,
+    "last_decision": null,
+    "last_decision_reason": null
+  },
+  "guardrails": {
+    "pause_new_experiments_if_data_quality_is_poor": true,
+    "pause_new_experiments_if_safety_issue_detected": true,
+    "pause_new_experiments_if_active_experiment_incomplete": true,
+    "max_concurrent_experiments": 1
+  }
+}
