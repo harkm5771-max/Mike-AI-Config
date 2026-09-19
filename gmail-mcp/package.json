@@ -1,0 +1,19 @@
+{
+  "name": "smm-gmail-mcp",
+  "version": "1.0.0",
+  "description": "Private Gmail MCP server for Screaming Mike Media",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.18.0",
+    "express": "^5.1.0",
+    "googleapis": "^160.0.0",
+    "zod": "^3.25.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
