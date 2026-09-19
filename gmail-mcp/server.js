@@ -57,6 +57,8 @@ server.registerTool(
       q: query,
       maxResults,
     });
+      return server;
+}
 
     const messages = result.data.messages ?? [];
 
