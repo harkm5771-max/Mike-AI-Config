@@ -36,6 +36,16 @@ memory:
       Do not store trivial one-off details, temporary requests, or information that is
       unlikely to matter in future conversations.
 
+interface:
+  schedules:
+    use: true
+    create: true
+    maxPerUser: 10
+    minIntervalMinutes: 60
+    autoDisableAfterFailures: 5
+    fireConcurrency: 2
+    requireProject: false
+
 webSearch:
   searchProvider: tavily
   scraperProvider: tavily
@@ -52,4 +62,3 @@ mcpServers:
     timeout: 60000
     initTimeout: 60000
     startup: true
-    
