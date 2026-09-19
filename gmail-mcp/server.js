@@ -232,6 +232,8 @@ app.use("/mcp", (req, res, next) => {
 });
 
 app.all("/mcp", async (req, res) => {
+  const server = createServer();
+
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
   });
@@ -239,8 +241,6 @@ app.all("/mcp", async (req, res) => {
   try {
     await server.connect(transport);
     await transport.handleRequest(req, res, req.body);
-  } catch (error) {
-    console.error("MCP request failed:", error);
 
     if (!res.headersSent) {
       res.status(500).json({
