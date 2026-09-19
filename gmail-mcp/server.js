@@ -11,6 +11,7 @@ const {
   GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET,
   GOOGLE_REFRESH_TOKEN,
+  MCP_API_TOKEN,
   PORT = 3000,
 } = process.env;
 
@@ -213,6 +214,18 @@ server.registerTool(
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true });
+});
+
+app.use("/mcp", (req, res, next) => {
+  const authHeader = req.get("authorization");
+
+  if (!MCP_API_TOKEN || authHeader !== `Bearer ${MCP_API_TOKEN}`) {
+    return res.status(401).json({
+      error: "Unauthorized",
+    });
+  }
+
+  next();
 });
 
 app.all("/mcp", async (req, res) => {
