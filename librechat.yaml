@@ -2,193 +2,225 @@ version: 1.3.16
 cache: true
 
 memory:
-  disabled: false
-  personalize: true
-  tokenLimit: 3000
-  charLimit: 10000
-  maxInputTokens: 12000
-  messageWindowSize: 8
+disabled: false
+personalize: true
+tokenLimit: 3000
+charLimit: 10000
+maxInputTokens: 12000
+messageWindowSize: 8
 
-  validKeys:
-    - user_preferences
-    - personal_context
-    - ongoing_projects
-    - learned_facts
+validKeys:
+- user_preferences
+- personal_context
+- ongoing_projects
+- learned_facts
 
-  agent:
-    enabled: true
-    provider: openAI
-    model: gpt-4.1-mini
-    instructions: |
-      Maintain durable memory about the user using only the allowed keys.
+agent:
+enabled: true
+provider: openAI
+model: gpt-4.1-mini
+instructions: |
+Maintain durable memory about the user using only the allowed keys.
 
-      Use user_preferences for explicitly stated preferences about communication style,
-      formatting, workflow, tools, or how the user wants responses handled.
+```
+  Use user_preferences for explicitly stated preferences about communication style,
+  formatting, workflow, tools, or how the user wants responses handled.
 
-      Use personal_context for stable background facts the user explicitly shares that
-      are likely to matter in future conversations.
+  Use personal_context for stable background facts the user explicitly shares that
+  are likely to matter in future conversations.
 
-      Use ongoing_projects for active businesses, projects, goals, or recurring work
-      the user is currently pursuing.
+  Use ongoing_projects for active businesses, projects, goals, or recurring work
+  the user is currently pursuing.
 
-      Use learned_facts for other durable factual information explicitly stated by the user.
+  Use learned_facts for other durable factual information explicitly stated by the user.
 
-      Do not store trivial one-off details, temporary requests, or information that is
-      unlikely to matter in future conversations.
+  Do not store trivial one-off details, temporary requests, or information that is
+  unlikely to matter in future conversations.
+```
 
 interface:
-  schedules:
-    use: true
-    create: true
-    maxPerUser: 10
-    minIntervalMinutes: 60
-    autoDisableAfterFailures: 5
-    fireConcurrency: 2
-    requireProject: false
+schedules:
+use: true
+create: true
+maxPerUser: 10
+minIntervalMinutes: 60
+autoDisableAfterFailures: 5
+fireConcurrency: 2
+requireProject: false
 
 webSearch:
-  searchProvider: tavily
-  scraperProvider: tavily
-  rerankerType: none
-  tavilyApiKey: "${TAVILY_API_KEY}"
+searchProvider: tavily
+scraperProvider: tavily
+rerankerType: none
+tavilyApiKey: "${TAVILY_API_KEY}"
 
 mcpServers:
-  gmail:
-    type: streamable-http
-    url: "https://gmail-mcp-production-fc64.up.railway.app/mcp"
-    headers:
-      Authorization: "Bearer ${MCP_API_TOKEN}"
-    requiresOAuth: false
-    timeout: 60000
-    initTimeout: 60000
-    startup: true
+gmail:
+type: streamable-http
+url: "https://gmail-mcp-production-fc64.up.railway.app/mcp"
+headers:
+Authorization: "Bearer ${MCP_API_TOKEN}"
+requiresOAuth: false
+timeout: 60000
+initTimeout: 60000
+startup: true
 
-  github:
-    type: streamable-http
-    url: "https://api.githubcopilot.com/mcp/"
-    headers:
-      Authorization: "Bearer ${GITHUB_MCP_PAT}"
-    requiresOAuth: false
-    timeout: 60000
-    initTimeout: 60000
-    startup: true
-    serverInstructions: |
-      This GitHub connection is used as the durable configuration and strategy store
-      for Screaming Mike Media.
+github:
+type: streamable-http
+url: "https://api.githubcopilot.com/mcp/"
+headers:
+Authorization: "Bearer ${GITHUB_MCP_PAT}"
+X-MCP-Toolsets: "repos"
+X-MCP-Readonly: "false"
+requiresOAuth: false
+timeout: 60000
+initTimeout: 60000
+startup: true
+serverInstructions: |
+This GitHub connection is used as the durable configuration and strategy store
+for Screaming Mike Media.
 
-      Primary repository:
-      harkm5771-max/Mike-AI-Config
+```
+  Primary repository:
+  harkm5771-max/Mike-AI-Config
 
-      For Screaming Mike Media acquisition work, treat the following files as the
-      durable source of truth:
+  For Screaming Mike Media acquisition work, treat the following files as the
+  durable source of truth:
 
-      smm-outreach/runtime.md
-      smm-outreach/strategy.json
-      smm-outreach/optimizer.md
-      smm-outreach/metrics-schema.json
-      smm-outreach/experiment-state.json
-      smm-outreach/change-log.json
+  smm-outreach/runtime.md
+  smm-outreach/strategy.json
+  smm-outreach/optimizer.md
+  smm-outreach/metrics-schema.json
+  smm-outreach/experiment-state.json
+  smm-outreach/change-log.json
+  smm-outreach/outcome-ledger.json
+  smm-outreach/reply-watcher.md
 
-      Before executing Screaming Mike Media prospecting, drafting, follow-up
-      preparation, or outreach activity:
+  Before executing Screaming Mike Media prospecting, drafting, follow-up
+  preparation, reply watching, bounce scanning, or outreach activity:
 
-      1. Read smm-outreach/runtime.md.
-      2. Read smm-outreach/strategy.json.
-      3. Confirm the active strategy status and version.
-      4. Apply all hard rules, Touch 1 rules, follow-up rules, winning patterns,
-         and losing-pattern guidance.
-      5. Preserve the active strategy version with newly generated outreach records
-         whenever the underlying system supports that attribution.
+  1. Read smm-outreach/runtime.md.
+  2. Read smm-outreach/strategy.json.
+  3. Confirm the active strategy status and version.
+  4. Apply all hard rules, Touch 1 rules, follow-up rules, winning patterns,
+     and losing-pattern guidance.
+  5. Preserve the active strategy version with newly generated outreach records
+     whenever the underlying system supports that attribution.
 
-      Before performing Screaming Mike Media outreach optimization:
+  Before processing Gmail replies or delivery events:
 
-      1. Read smm-outreach/optimizer.md.
-      2. Read smm-outreach/strategy.json.
-      3. Read smm-outreach/metrics-schema.json.
-      4. Read smm-outreach/experiment-state.json.
-      5. Read relevant history from smm-outreach/change-log.json.
-      6. Evaluate available outreach outcome data before making any strategy change.
+  1. Read smm-outreach/reply-watcher.md.
+  2. Read smm-outreach/metrics-schema.json.
+  3. Read smm-outreach/outcome-ledger.json.
+  4. Classify relevant Gmail events using the canonical metrics definitions.
+  5. Update smm-outreach/outcome-ledger.json with verified evidence.
+  6. Preserve historical outcomes and avoid duplicate event insertion.
 
-      The optimizer must follow the rules in optimizer.md.
+  The Reply Watcher may autonomously update:
 
-      Do not silently invent configuration when a required file cannot be read,
-      parsed, or verified.
+  smm-outreach/outcome-ledger.json
 
-      If a required strategy file is unavailable or invalid, preserve the last
-      known-good configuration when safely possible and surface the failure.
+  The Reply Watcher must not modify:
 
-      Strategy changes must preserve a complete audit trail.
+  smm-outreach/strategy.json
+  smm-outreach/optimizer.md
+  smm-outreach/runtime.md
+  smm-outreach/metrics-schema.json
+  smm-outreach/experiment-state.json
 
-      Do not delete or rewrite historical optimizer records.
+  Before performing Screaming Mike Media outreach optimization:
 
-      Do not make more than one substantive strategy change per optimization cycle
-      unless the changes are inseparable parts of one experiment.
+  1. Read smm-outreach/optimizer.md.
+  2. Read smm-outreach/strategy.json.
+  3. Read smm-outreach/metrics-schema.json.
+  4. Read smm-outreach/experiment-state.json.
+  5. Read smm-outreach/outcome-ledger.json.
+  6. Read relevant history from smm-outreach/change-log.json.
+  7. Evaluate available outreach outcome data before making any strategy change.
 
-      Do not begin a new substantive experiment while another active experiment
-      remains incomplete unless a safety or rollback condition requires intervention.
+  The optimizer must follow the rules in optimizer.md.
 
-      Never modify or bypass:
+  Do not silently invent configuration when a required file cannot be read,
+  parsed, or verified.
 
-      - suppression rules
-      - opt-out handling
-      - no-contact rules
-      - anti-fabrication rules
-      - no-guarantee rules
-      - pricing
-      - contractual terms
-      - prospect eligibility protections
-      - sending permissions
-      - Touch 1 manual-send requirements
+  If a required strategy file is unavailable or invalid, preserve the last
+  known-good configuration when safely possible and surface the failure.
 
-      unless Mike explicitly authorizes that specific change.
+  Strategy changes must preserve a complete audit trail.
 
-      Touch 1 email remains manual-send by Mike.
+  Do not delete or rewrite historical optimizer records.
 
-      Touch 1 drafts may be researched, created, improved, quality-checked, and placed
-      into Gmail Drafts, but they must not be automatically sent or schedule-sent.
+  Do not make more than one substantive strategy change per optimization cycle
+  unless the changes are inseparable parts of one experiment.
 
-      Routine follow-ups may only be sent when the live Screaming Mike Media workflow
-      explicitly grants that sending authority and the prospect passes fresh reply,
-      suppression, bounce, and eligibility checks.
+  Do not begin a new substantive experiment while another active experiment
+  remains incomplete unless a safety or rollback condition requires intervention.
 
-      Before any follow-up send, verify that no new human reply, opt-out, complaint,
-      hard bounce, or suppression event has occurred.
+  Never modify or bypass:
 
-      Use smm-outreach/metrics-schema.json as the canonical definition for outcomes
-      and performance metrics.
+  - suppression rules
+  - opt-out handling
+  - no-contact rules
+  - anti-fabrication rules
+  - no-guarantee rules
+  - pricing
+  - contractual terms
+  - prospect eligibility protections
+  - sending permissions
+  - Touch 1 manual-send requirements
 
-      Do not treat drafts as sent messages.
+  unless Mike explicitly authorizes that specific change.
 
-      Do not treat scheduled messages as sent until the authoritative sending system
-      verifies the send.
+  Touch 1 email remains manual-send by Mike.
 
-      Do not treat out-of-office messages or automated responses as meaningful human
-      engagement.
+  Touch 1 drafts may be researched, created, improved, quality-checked, and placed
+  into Gmail Drafts, but they must not be automatically sent or schedule-sent.
 
-      Do not treat bounces as no-response outcomes.
+  Routine follow-ups may only be sent when the live Screaming Mike Media workflow
+  explicitly grants that sending authority and the prospect passes fresh reply,
+  suppression, bounce, and eligibility checks.
 
-      Do not treat opt-outs as ordinary negative replies.
+  Before any follow-up send, verify that no new human reply, opt-out, complaint,
+  hard bounce, or suppression event has occurred.
 
-      Optimize primarily for qualified positive business conversations, not raw reply
-      rate or outreach volume.
+  Use smm-outreach/metrics-schema.json as the canonical definition for outcomes
+  and performance metrics.
 
-      If evidence does not justify a strategy change, leave the active strategy
-      unchanged and record the no-change evaluation.
+  Do not treat drafts as sent messages.
 
-      Limit autonomous GitHub writes related to the Screaming Mike Media outreach
-      optimizer to:
+  Do not treat scheduled messages as sent until the authoritative sending system
+  verifies the send.
 
-      smm-outreach/strategy.json
-      smm-outreach/change-log.json
-      smm-outreach/experiment-state.json
+  Do not treat out-of-office messages or automated responses as meaningful human
+  engagement.
 
-      Do not autonomously modify:
+  Do not treat bounces as no-response outcomes.
 
-      smm-outreach/runtime.md
-      smm-outreach/optimizer.md
-      smm-outreach/metrics-schema.json
+  Do not treat opt-outs as ordinary negative replies.
 
-      unless Mike explicitly authorizes the change.
+  Optimize primarily for qualified positive business conversations, not raw reply
+  rate or outreach volume.
 
-      Do not modify files outside the smm-outreach directory unless Mike explicitly
-      authorizes that specific repository path.
+  If evidence does not justify a strategy change, leave the active strategy
+  unchanged and record the no-change evaluation.
+
+  Autonomous GitHub writes related to the Screaming Mike Media outreach optimizer
+  are limited to:
+
+  smm-outreach/strategy.json
+  smm-outreach/change-log.json
+  smm-outreach/experiment-state.json
+  smm-outreach/outcome-ledger.json
+
+  Do not autonomously modify:
+
+  smm-outreach/runtime.md
+  smm-outreach/optimizer.md
+  smm-outreach/metrics-schema.json
+  smm-outreach/reply-watcher.md
+
+  unless Mike explicitly authorizes the change.
+
+  Do not modify files outside the smm-outreach directory unless Mike explicitly
+  authorizes that specific repository path.
+```
